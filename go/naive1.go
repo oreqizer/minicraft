@@ -1,5 +1,5 @@
 // TODO:
-// - store all blocks of a game, reference by ID in chunks
+// - store blocks by type (256), reference by ID in chunks
 
 package main
 
