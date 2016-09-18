@@ -1,3 +1,13 @@
+{-
+General TODO:
+- consider strict types, do research
+- lists -> Vectors/Sequences
+- String vs Text vs ByteString
+- Linear package vs my impl
+- LANGUAGE Generics for Control.DeepSeq
+- just research this stuff at https://www.reddit.com/r/haskell/comments/52j2c9/performance_in_the_large_benchmark/
+-}
+
 module Main where
 
 import Data.Text
@@ -26,7 +36,7 @@ blockTypes = 256
 
 type BlockId = Int
 
-data Block = Block { bLocation :: Vector
+data Block = Block { bLocation :: Vector  -- x, y, z within the world
                    , bName :: Text
                    , bDurability :: Int
                    , bType :: BlockId
@@ -43,7 +53,7 @@ data EntityType = Zombie
                 | Enderman
                 deriving (Show)
 
-data Entity = Entity { eLocation :: Vector
+data Entity = Entity { eLocation :: Vector  -- x, y, z within the chunk
                      , eType :: EntityType
                      , eName :: Text
                      , eHp :: Int
@@ -68,7 +78,7 @@ entityMove :: Entity -> Entity
 entityMove e = e { eLocation = eLocation e `addV` change }
     where
         change =
-            let rngVector = Vector 1 1 1
+            let rngVector = Vector 1 1 1  -- Complex movement AI
             in rngVector `mulV` eSpeed e
 
 mkEntity :: EntityType -> Vector -> Entity
@@ -95,7 +105,7 @@ data Chunk = Chunk { cLocation :: Vector
                    } deriving (Show)
 
 mkChunk :: Vector -> Chunk
-mkChunk v = Chunk { cLocation = v
+mkChunk v = Chunk { cLocation = v  -- x, y, z within the world
                   , cBlocks = [1..chunkBlocks :: BlockId]
                   , cEntities = fmap genEntity [1..chunkEntities]
                   }
