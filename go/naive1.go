@@ -176,13 +176,13 @@ func (g *Game) LoadWorld() {
 	for i := range g.blocks {
 		f := float64(i)
 		g.blocks[i] = Block{
-			loc: Vector{f, f, f},
-			name: fmt.Sprintf("Block:%d", i),
+			loc:        Vector{f, f, f},
+			name:       fmt.Sprintf("Block:%d", i),
 			durability: 100,
-			typ: BlockId(i),
-			textureid: 1,
-			breakable: true,
-			visible: true,
+			typ:        BlockId(i),
+			textureid:  1,
+			breakable:  true,
+			visible:    true,
 		}
 	}
 }
