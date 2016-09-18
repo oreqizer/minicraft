@@ -1,3 +1,6 @@
+// TODO:
+// - store all blocks of a game, reference by ID in chunks
+
 package main
 
 import (
