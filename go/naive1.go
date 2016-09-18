@@ -71,46 +71,34 @@ func (e *Entity) Move() {
 }
 
 func NewEntity(loc Vector, typ Type) *Entity {
+	e := &Entity{
+		loc: loc,
+		typ: typ,
+	}
+
 	switch typ {
 	case Zombie:
-		return &Entity{
-			loc:   loc,
-			typ:   Zombie,
-			name:  "Zombie",
-			hp:    50,
-			speed: Vector{0.5, 0, 0.5}, // slow, can't fly
-		}
+		e.name = "Zombie"
+		e.hp = 50
+		e.speed = Vector{0.5, 0, 0.5} // slow, can't fly
 
 	case Chicken:
-		return &Entity{
-			loc:   loc,
-			typ:   Chicken,
-			name:  "Chicken",
-			hp:    25,
-			speed: Vector{0.75, 0.25, 0.75}, // can fly a bit
-		}
+		e.name = "Chicken"
+		e.hp = 25
+		e.speed = Vector{0.75, 0.25, 0.75} // can fly a bit
 
 	case Creeper:
-		return &Entity{
-			loc:   loc,
-			typ:   Creeper,
-			name:  "Creeper",
-			hp:    75,
-			speed: Vector{0.75, 0, 0.75},
-		}
+		e.name = "Creeper"
+		e.hp = 75
+		e.speed = Vector{0.75, 0, 0.75}
 
 	case Enderman:
-		return &Entity{
-			loc:   loc,
-			typ:   Enderman,
-			name:  "Enderman",
-			hp:    500,
-			speed: Vector{1, 1, 1}, // does what he wants
-		}
-
-	default:
-		return &Entity{}
+		e.name = "Enderman"
+		e.hp = 500
+		e.speed = Vector{1, 1, 1} // does what he wants
 	}
+
+	return e
 }
 
 // Chunk
@@ -135,16 +123,16 @@ func (c *Chunk) ProcessEntities() {
 
 func genBlocks() []Block {
 	blocks := make([]Block, ChunkBlocks)
-	for i := 0; i < ChunkBlocks; i++ {
+	for i := range blocks {
 		name := fmt.Sprintf("Block:%d", i)
 		f := float64(i)
-		blocks = append(blocks, Block{Vector{f, f, f}, name, 100, 1, 1, true, true})
+		blocks[i] = Block{Vector{f, f, f}, name, 100, 1, 1, true, true}
 	}
 	return blocks
 }
 
 func genEntities() []*Entity {
-	entities := make([]*Entity, ChunkEntities)
+	entities := make([]*Entity, 0, ChunkEntities)
 	for i := 0; i < ChunkEntities/4; i++ {
 		// Fancy procedural generation initial position equation
 		f := float64(i)
@@ -167,9 +155,7 @@ func NewChunk(loc Vector) *Chunk {
 // Game
 // ---
 
-const (
-	GameChunks = 100
-)
+const GameChunks = 100
 
 type Game struct {
 	chunks     []*Chunk
