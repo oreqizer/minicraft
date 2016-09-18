@@ -1,6 +1,3 @@
-// TODO:
-// - store blocks by type (256), reference by ID in chunks
-
 package main
 
 import (
