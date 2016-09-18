@@ -36,11 +36,15 @@ func (a Vector) Dist(b Vector) float64 {
 // Block
 // ---
 
+const BlockTypes = 256
+
+type BlockId int
+
 type Block struct {
 	loc        Vector // x, y, z within a chunk
 	name       string
 	durability int
-	typ        int
+	typ        BlockId
 	textureid  int
 	breakable  bool
 	visible    bool
@@ -114,7 +118,7 @@ const (
 
 type Chunk struct {
 	loc      Vector // x, y, z within the world
-	blocks   []Block
+	blocks   []BlockId
 	entities []*Entity
 }
 
@@ -124,14 +128,12 @@ func (c *Chunk) ProcessEntities() {
 	}
 }
 
-func genBlocks() []Block {
-	blocks := make([]Block, ChunkBlocks)
-	for i := range blocks {
-		name := fmt.Sprintf("Block:%d", i)
-		f := float64(i)
-		blocks[i] = Block{Vector{f, f, f}, name, 100, 1, 1, true, true}
+func genBlockIds() []BlockId {
+	ids := make([]BlockId, ChunkBlocks)
+	for i := range ids {
+		ids[i] = BlockId(i)
 	}
-	return blocks
+	return ids
 }
 
 func genEntities() []*Entity {
@@ -150,7 +152,7 @@ func genEntities() []*Entity {
 func NewChunk(loc Vector) *Chunk {
 	return &Chunk{
 		loc:      loc,
-		blocks:   genBlocks(),
+		blocks:   genBlockIds(),
 		entities: genEntities(),
 	}
 }
@@ -162,6 +164,7 @@ const GameChunks = 100
 
 type Game struct {
 	chunks     []*Chunk
+	blocks     []Block
 	chunkCount int
 	playerLoc  Vector
 }
@@ -170,6 +173,20 @@ func (g *Game) LoadWorld() {
 	for i := 0; i < GameChunks; i++ {
 		g.chunks = append(g.chunks, NewChunk(Vector{float64(g.chunkCount), 0, 0}))
 		g.chunkCount++
+	}
+
+	g.blocks = make([]Block, BlockTypes)
+	for i := range g.blocks {
+		f := float64(i)
+		g.blocks[i] = Block{
+			loc: Vector{f, f, f},
+			name: fmt.Sprintf("Block:%d", i),
+			durability: 100,
+			typ: BlockId(i),
+			textureid: 1,
+			breakable: true,
+			visible: true,
+		}
 	}
 }
 
