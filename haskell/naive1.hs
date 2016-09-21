@@ -10,6 +10,7 @@ General TODO:
 
 module Main where
 
+import Control.Concurrent (threadDelay)
 import Control.Monad.State
 import Data.Text
 import Data.Time
@@ -172,19 +173,28 @@ loop (Game chunks counter blocks playerLoc) = Game chunks' counter' blocks playe
 
 -- main
 
-gameLoop :: Game -> IO ()
-gameLoop game = do
+sleep16 :: NominalDiffTime -> IO ()
+sleep16 t = do
+    let wait = floor $ (0.016 - t) * 1000000
+    threadDelay wait
+
+gameLoop :: Int -> Game -> IO ()
+gameLoop iter game = do
     now <- getCurrentTime
     let game' = loop game
     looped <- getCurrentTime
-    putStrLn $ show $ diffUTCTime looped now -- TODO: normal reporting, add 16ms threshold
-    gameLoop game'
+    let diff = diffUTCTime looped now
+    sleep16 diff
+    putStrLn $ show iter ++ ": " ++ (show $ diff)
+    gameLoop (iter + 1) game'
 
 main :: IO ()
 main = do
     putStrLn "Loading World..."
     now <- getCurrentTime
     let game = loadWorld
+    putStrLn $ show $ Prelude.length $ gChunks game
     loaded <- getCurrentTime
-    putStrLn $ show $ diffUTCTime loaded now -- TODO: normal reporting
-    gameLoop game
+    putStrLn "FINISHED!"
+    putStrLn $ "Load time: " ++ (show $ diffUTCTime loaded now)
+    gameLoop 0 game
