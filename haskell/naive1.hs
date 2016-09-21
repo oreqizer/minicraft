@@ -10,7 +10,9 @@ General TODO:
 
 module Main where
 
+import Control.Monad.State
 import Data.Text
+import Data.Time
 
 -- Vector
 
@@ -36,7 +38,7 @@ blockTypes = 256
 
 type BlockId = Int
 
-data Block = Block { bLocation :: Vector  -- x, y, z within the world
+data Block = Block { bLocation :: Vector  -- x, y, z within the chunk
                    , bName :: Text
                    , bDurability :: Int
                    , bType :: BlockId
@@ -121,11 +123,68 @@ mkChunk v = Chunk { cLocation = v  -- x, y, z within the world
 processEntities :: Functor f => f Entity -> f Entity
 processEntities = fmap entityMove
 
--- World
+-- Game
 
--- TODO
+gameChunks :: Int
+gameChunks = 100
+
+data Game = Game { gChunks :: [Chunk]
+                 , gChunkCount :: Int
+                 , gBlocks :: [Block]
+                 , gPlayerLoc :: Vector
+                 } deriving (Show)
+
+loadWorld :: Game
+loadWorld = Game { gChunks = fmap mkChunk vectorSeq
+                 , gChunkCount = gameChunks
+                 , gBlocks = fmap mkBlock [1..blockTypes]
+                 , gPlayerLoc = Vector 0 0 0
+                 }
+    where
+        vectorSeq = fmap (\i -> let f = fromIntegral i in Vector f f f) [1..gameChunks]
+        mkBlock n = Block { bLocation = Vector 0 0 0
+                          , bName = pack "Block"
+                          , bDurability = 100
+                          , bType = n :: BlockId
+                          , bTextureId = n
+                          , bBreakable = True
+                          , bVisible = True
+                          }
+
+updateChunk :: Vector -> Chunk -> State Int Chunk
+updateChunk pLoc c
+    | cLocation c `distV` pLoc > 100 = fmap mkChunk newPos
+    | otherwise = return (c { cEntities = processEntities $ cEntities c })
+    where
+        newPos :: State Int Vector
+        newPos = do
+            x <- get
+            let x' = x + 1
+            put x'
+            let f = fromIntegral x
+            return $ Vector f f f
+
+loop :: Game -> Game
+loop (Game chunks counter blocks playerLoc) = Game chunks' counter' blocks playerLoc'
+    where
+        playerLoc' = playerLoc `addV` Vector 0.1 0 0
+        (chunks', counter') = runState (traverse (updateChunk playerLoc') chunks) counter
+
+gameLoop :: Game -> IO ()
+gameLoop game = do
+    now <- getCurrentTime
+    let game' = loop game
+    looped <- getCurrentTime
+    putStrLn $ show $ diffUTCTime looped now -- TODO: normal reporting, add 16ms threshold
+    gameLoop game'
 
 -- main
 
 main :: IO ()
-main = putStr "temp"
+main = do
+    putStrLn "Loading World..."
+    now <- getCurrentTime
+    let game = loadWorld
+    loaded <- getCurrentTime
+    putStrLn $ show $ diffUTCTime loaded now -- TODO: normal reporting
+    gameLoop game
