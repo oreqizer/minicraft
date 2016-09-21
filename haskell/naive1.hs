@@ -170,6 +170,8 @@ loop (Game chunks counter blocks playerLoc) = Game chunks' counter' blocks playe
         playerLoc' = playerLoc `addV` Vector 0.1 0 0
         (chunks', counter') = runState (traverse (updateChunk playerLoc') chunks) counter
 
+-- main
+
 gameLoop :: Game -> IO ()
 gameLoop game = do
     now <- getCurrentTime
@@ -177,8 +179,6 @@ gameLoop game = do
     looped <- getCurrentTime
     putStrLn $ show $ diffUTCTime looped now -- TODO: normal reporting, add 16ms threshold
     gameLoop game'
-
--- main
 
 main :: IO ()
 main = do
