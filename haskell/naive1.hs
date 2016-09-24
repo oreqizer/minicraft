@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 {-
 General TODO:
@@ -18,16 +19,25 @@ import Control.Exception.Base
 import Control.Monad.State
 import Data.Text
 import Data.Time
-import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Base as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as V
-import qualified Data.Vector as VB
+import qualified Data.Vector as VB  -- Boxed
 import GHC.Generics (Generic)
 
 import Data.Vector.Unboxed.Base (Unbox)
 
 -- Vector
 
-data Vector = Vector !Float !Float !Float deriving (Eq, Generic, Show)
+data Vector = Vector !Float !Float !Float
+    deriving (Eq, Generic, Show)
+
+instance GM.MVector V.MVector Vector where -- TODO
+
+instance G.Vector V.Vector Vector where -- TODO
+
+instance V.Unbox Vector
+
 
 instance NFData Vector
 
@@ -68,7 +78,7 @@ data EntityType = Zombie
                 | Chicken
                 | Creeper
                 | Enderman
-                deriving (Eq, Ord, Generic, Show)
+                deriving (Eq, Enum, Generic, Show)
 
 data Entity = Entity { eLocation    :: !Vector  -- x, y, z within the chunk
                      , eType        :: !EntityType
@@ -76,6 +86,15 @@ data Entity = Entity { eLocation    :: !Vector  -- x, y, z within the chunk
                      , eHp          :: !Int
                      , eSpeed       :: !Vector
                      } deriving (Eq, Generic, Show)
+
+
+instance GM.MVector V.MVector EntityType where -- TODO
+
+instance G.Vector V.Vector EntityType where -- TODO
+
+instance GM.MVector V.MVector Entity where -- TODO
+
+instance G.Vector V.Vector Entity where -- TODO
 
 instance V.Unbox EntityType
 instance V.Unbox Entity
@@ -85,10 +104,10 @@ instance NFData Entity
 
 entitySpeed :: EntityType -> Vector
 entitySpeed e = case e of
-                    Zombie -> Vector 0.5 0 0.5  -- slow, can't fly
-                    Chicken -> Vector 0.75 0.25 0.75  -- can fly a bit
+                    Zombie -> Vector 0.5 0 0.5          -- slow, can't fly
+                    Chicken -> Vector 0.75 0.25 0.75    -- can fly a bit
                     Creeper -> Vector 0.75 0 0.75
-                    Enderman -> Vector 1 1 1  -- does what he wants
+                    Enderman -> Vector 1 1 1            -- does what he wants
 
 entityHp :: EntityType -> Int
 entityHp e = case e of
