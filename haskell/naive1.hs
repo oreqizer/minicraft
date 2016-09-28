@@ -56,7 +56,7 @@ instance GM.MVector V.MVector Vector where
     basicInitialize (MV_Vector _ v) = GM.basicInitialize v
 
 instance G.Vector V.Vector Vector where
-    basicUnsafeFreeze (MV_Vector n v) = liftM ( V_Vector n) (G.basicUnsafeFreeze v)
+    basicUnsafeFreeze (MV_Vector n v) = liftM (V_Vector n) (G.basicUnsafeFreeze v)
     basicUnsafeThaw   (V_Vector n v) = liftM (MV_Vector n) (G.basicUnsafeThaw   v)
     basicLength       (V_Vector n _) = n
     basicUnsafeSlice m n (V_Vector _ v) = V_Vector n (G.basicUnsafeSlice (3*m) (3*n) v)
@@ -131,7 +131,7 @@ instance GM.MVector V.MVector EntityType where
     basicInitialize (MV_EntityType _ v) = GM.basicInitialize v
 
 instance G.Vector V.Vector EntityType where
-    basicUnsafeFreeze (MV_EntityType n v) = liftM ( V_EntityType n) (G.basicUnsafeFreeze v)
+    basicUnsafeFreeze (MV_EntityType n v) = liftM (V_EntityType n) (G.basicUnsafeFreeze v)
     basicUnsafeThaw   (V_EntityType n v) = liftM (MV_EntityType n) (G.basicUnsafeThaw   v)
     basicLength       (V_EntityType n _) = n
     basicUnsafeSlice m n (V_EntityType _ v) = V_EntityType n (G.basicUnsafeSlice m n v)
@@ -154,7 +154,7 @@ instance GM.MVector V.MVector Entity where
     basicInitialize (MV_Entity _ v) = GM.basicInitialize v
 
 instance G.Vector V.Vector Entity where
-    basicUnsafeFreeze (MV_Entity n v) = liftM ( V_Entity n) (G.basicUnsafeFreeze v)
+    basicUnsafeFreeze (MV_Entity n v) = liftM (V_Entity n) (G.basicUnsafeFreeze v)
     basicUnsafeThaw   (V_Entity n v) = liftM (MV_Entity n) (G.basicUnsafeThaw   v)
     basicLength       (V_Entity n _) = n
     basicUnsafeSlice m n (V_Entity _ v) = V_Entity n (G.basicUnsafeSlice m n v)
