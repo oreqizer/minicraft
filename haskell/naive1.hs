@@ -20,13 +20,13 @@ import Control.Monad.State
 import Data.Bits
 import Data.Text
 import Data.Time
+import Data.Vector.Unboxed.Base (Unbox)
 import qualified Data.Vector.Generic.Base as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector as VB  -- Boxed
 import GHC.Generics (Generic)
 
-import Data.Vector.Unboxed.Base (Unbox)
 
 -- Vector
 
