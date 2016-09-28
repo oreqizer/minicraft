@@ -136,8 +136,6 @@ chunkBlocks = 65536
 chunkEntities :: Int
 chunkEntities = 1000
 
--- TODO: consider Data.Vector / Data.Sequence
--- see https://gist.github.com/bartavelle/c1aaf8a47158132ee12caf42449f9066
 data Chunk = Chunk { cLocation  :: !Vector
                    , cBlocks    :: !(V.Vector BlockId)
                    , cEntities  :: !(VB.Vector Entity)
