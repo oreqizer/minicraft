@@ -4,10 +4,8 @@
 {-
 General TODO:
 - consider strict types, do research
-- lists -> Vectors/Sequences
-- String vs Text vs ByteString
+- Text vs ByteString
 - Linear package vs my impl
-- LANGUAGE Generics for Control.DeepSeq
 - just research this stuff at https://www.reddit.com/r/haskell/comments/52j2c9/performance_in_the_large_benchmark/
 -}
 
@@ -103,17 +101,17 @@ instance NFData Entity
 
 entitySpeed :: EntityType -> Vector
 entitySpeed e = case e of
-                    Zombie -> Vector 0.5 0 0.5          -- slow, can't fly
-                    Chicken -> Vector 0.75 0.25 0.75    -- can fly a bit
-                    Creeper -> Vector 0.75 0 0.75
-                    Enderman -> Vector 1 1 1            -- does what he wants
+                    Zombie      -> Vector 0.5 0 0.5       -- slow, can't fly
+                    Chicken     -> Vector 0.75 0.25 0.75  -- can fly a bit
+                    Creeper     -> Vector 0.75 0 0.75
+                    Enderman    -> Vector 1 1 1           -- does what he wants
 
 entityHp :: EntityType -> Int
 entityHp e = case e of
-                Zombie -> 50
-                Chicken -> 25
-                Creeper -> 75
-                Enderman -> 500
+                Zombie      -> 50
+                Chicken     -> 25
+                Creeper     -> 75
+                Enderman    -> 500
 
 entityMove :: Entity -> Entity
 entityMove e = e { eLocation = eLocation e `addV` change }
@@ -156,10 +154,10 @@ mkChunk v = Chunk { cLocation = v  -- x, y, z within the world
         genEntity n =
             let i = fromIntegral n
             in case n `mod` 3 of
-                0 -> mkEntity Chicken (Vector i i i)
-                1 -> mkEntity Zombie (Vector i i i)
-                2 -> mkEntity Creeper (Vector i i i)
-                _ -> mkEntity Enderman (Vector i i i)
+                0 -> mkEntity Chicken   (Vector i i i)
+                1 -> mkEntity Zombie    (Vector i i i)
+                2 -> mkEntity Creeper   (Vector i i i)
+                _ -> mkEntity Enderman  (Vector i i i)
 
 processEntities :: Functor f => f Entity -> f Entity
 processEntities = fmap entityMove
