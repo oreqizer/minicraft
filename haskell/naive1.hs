@@ -29,14 +29,13 @@ import Data.Vector.Unboxed.Base (Unbox)
 
 -- Vector
 
-data Vector = Vector !Float !Float !Float
-    deriving (Eq, Generic, Show)
+data Vector = Vector !Float !Float !Float deriving (Eq, Generic, Show)
 
-instance GM.MVector V.MVector Vector where -- TODO
-
-instance G.Vector V.Vector Vector where -- TODO
-
-instance V.Unbox Vector
+--instance GM.MVector V.MVector Vector where -- TODO
+--
+--instance G.Vector V.Vector Vector where -- TODO
+--
+--instance V.Unbox Vector
 
 
 instance NFData Vector
@@ -51,7 +50,7 @@ mulV :: Vector -> Vector -> Vector
 mulV (Vector x1 y1 z1) (Vector x2 y2 z2) = Vector (x1 * x2) (y1 * y2) (z1 * z2)
 
 distV :: Vector -> Vector -> Float
-distV v1 v2 = sqrt $ x**2 + y**2 + z**2
+distV v1 v2 = sqrt $ x*x + y*y + z*z
     where (Vector x y z) = v1 `subV` v2
 
 -- Block
@@ -88,16 +87,16 @@ data Entity = Entity { eLocation    :: !Vector  -- x, y, z within the chunk
                      } deriving (Eq, Generic, Show)
 
 
-instance GM.MVector V.MVector EntityType where -- TODO
-
-instance G.Vector V.Vector EntityType where -- TODO
-
-instance GM.MVector V.MVector Entity where -- TODO
-
-instance G.Vector V.Vector Entity where -- TODO
-
-instance V.Unbox EntityType
-instance V.Unbox Entity
+--instance GM.MVector V.MVector EntityType where -- TODO
+--
+--instance G.Vector V.Vector EntityType where -- TODO
+--
+--instance GM.MVector V.MVector Entity where -- TODO
+--
+--instance G.Vector V.Vector Entity where -- TODO
+--
+--instance V.Unbox EntityType
+--instance V.Unbox Entity
 
 instance NFData EntityType
 instance NFData Entity
@@ -143,7 +142,7 @@ chunkEntities = 1000
 -- see https://gist.github.com/bartavelle/c1aaf8a47158132ee12caf42449f9066
 data Chunk = Chunk { cLocation  :: !Vector
                    , cBlocks    :: !(V.Vector BlockId)
-                   , cEntities  :: !(V.Vector Entity)
+                   , cEntities  :: !(VB.Vector Entity)
                    } deriving (Generic)
 
 instance NFData Chunk
@@ -151,7 +150,7 @@ instance NFData Chunk
 mkChunk :: Vector -> Chunk
 mkChunk v = Chunk { cLocation = v  -- x, y, z within the world
                   , cBlocks = V.generate chunkBlocks fromIntegral
-                  , cEntities = V.generate chunkEntities genEntity -- TODO
+                  , cEntities = VB.generate chunkEntities genEntity
                   }
     where
         genEntity n =
@@ -198,7 +197,7 @@ loadWorld = Game { gChunks = fmap mkChunk vectorSeq
 updateChunk :: Vector -> Chunk -> State Int Chunk
 updateChunk pLoc c
     | cLocation c `distV` pLoc > 100 = fmap mkChunk newPos
-    | otherwise = return (c { cEntities = processEntities $ cEntities c }) -- TODO
+    | otherwise = return (c { cEntities = processEntities $ cEntities c })
     where
         newPos :: State Int Vector
         newPos = do
@@ -230,7 +229,7 @@ gameLoop iter game = do
     end <- getCurrentTime
     let diff = diffUTCTime end start
     sleep16 diff
-    putStrLn $ show iter ++ ": " ++ (show $ diff)
+    putStrLn $ show (100 - iter) ++ ": " ++ (show $ diff)
     gameLoop (iter - 1) game'
 
 main :: IO ()
