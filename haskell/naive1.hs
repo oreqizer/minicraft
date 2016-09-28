@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE RecordWildCards #-}
 
 {-
 General TODO:
@@ -15,6 +17,7 @@ import Control.Concurrent (threadDelay)
 import Control.DeepSeq
 import Control.Exception.Base
 import Control.Monad.State
+import Data.Bits
 import Data.Text
 import Data.Time
 import qualified Data.Vector.Generic.Base as G
@@ -29,12 +32,40 @@ import Data.Vector.Unboxed.Base (Unbox)
 
 data Vector = Vector !Float !Float !Float deriving (Eq, Generic, Show)
 
---instance GM.MVector V.MVector Vector where -- TODO
---
---instance G.Vector V.Vector Vector where -- TODO
---
---instance V.Unbox Vector
+data instance V.MVector s Vector = MV_Vector !Int !(V.MVector s Float)
+data instance V.Vector    Vector =  V_Vector !Int !(V.Vector    Float)
 
+instance Unbox Vector
+
+instance GM.MVector V.MVector Vector where
+    basicLength (MV_Vector n _) = n
+    basicUnsafeSlice m n (MV_Vector _ v) = MV_Vector n (GM.basicUnsafeSlice (3*m) (3*n) v)
+    basicOverlaps (MV_Vector _ v) (MV_Vector _ u) = GM.basicOverlaps v u
+    basicUnsafeNew n = liftM (MV_Vector n) (GM.basicUnsafeNew (3*n))
+    basicUnsafeRead (MV_Vector _ v) i = do
+        let o = 3*i
+        x <- GM.basicUnsafeRead v o
+        y <- GM.basicUnsafeRead v (o+1)
+        z <- GM.basicUnsafeRead v (o+2)
+        return (Vector x y z)
+    basicUnsafeWrite (MV_Vector _ v) i (Vector x y z) = do
+        let o = 3*i
+        GM.basicUnsafeWrite v o     x
+        GM.basicUnsafeWrite v (o+1) y
+        GM.basicUnsafeWrite v (o+2) z
+    basicInitialize (MV_Vector _ v) = GM.basicInitialize v
+
+instance G.Vector V.Vector Vector where
+    basicUnsafeFreeze (MV_Vector n v) = liftM ( V_Vector n) (G.basicUnsafeFreeze v)
+    basicUnsafeThaw   (V_Vector n v) = liftM (MV_Vector n) (G.basicUnsafeThaw   v)
+    basicLength       (V_Vector n _) = n
+    basicUnsafeSlice m n (V_Vector _ v) = V_Vector n (G.basicUnsafeSlice (3*m) (3*n) v)
+    basicUnsafeIndexM (V_Vector _ v) i = do
+        let o = 3*i
+        x <- G.basicUnsafeIndexM v o
+        y <- G.basicUnsafeIndexM v (o+1)
+        z <- G.basicUnsafeIndexM v (o+2)
+        return (Vector x y z)
 
 instance NFData Vector
 
@@ -67,6 +98,7 @@ data Block = Block { bLocation      :: !Vector  -- x, y, z within the chunk
                    , bVisible       :: !Bool
                    } deriving (Eq, Generic, Show)
 
+-- WHNF = NF for a strict datatype:
 instance NFData Block where rnf Block{} = ()
 
 -- Enitity
@@ -75,29 +107,63 @@ data EntityType = Zombie
                 | Chicken
                 | Creeper
                 | Enderman
-                deriving (Eq, Enum, Generic, Show)
+                deriving (Eq, Enum, Show)
 
 data Entity = Entity { eLocation    :: !Vector  -- x, y, z within the chunk
                      , eType        :: !EntityType
                      , eName        :: !Text
                      , eHp          :: !Int
                      , eSpeed       :: !Vector
-                     } deriving (Eq, Generic, Show)
+                     } deriving (Eq, Show)
 
+data instance V.MVector s EntityType = MV_EntityType !Int !(V.MVector s Int)
+data instance V.Vector    EntityType =  V_EntityType !Int !(V.Vector    Int)
 
---instance GM.MVector V.MVector EntityType where -- TODO
---
---instance G.Vector V.Vector EntityType where -- TODO
---
---instance GM.MVector V.MVector Entity where -- TODO
---
---instance G.Vector V.Vector Entity where -- TODO
---
---instance V.Unbox EntityType
---instance V.Unbox Entity
+instance Unbox EntityType
 
-instance NFData EntityType
-instance NFData Entity
+instance GM.MVector V.MVector EntityType where
+    basicLength (MV_EntityType n _) = n
+    basicUnsafeSlice m n (MV_EntityType _ v) = MV_EntityType n (GM.basicUnsafeSlice m n v)
+    basicOverlaps (MV_EntityType _ v) (MV_EntityType _ u) = GM.basicOverlaps v u
+    basicUnsafeNew n = liftM (MV_EntityType n) (GM.basicUnsafeNew n)
+    basicUnsafeRead (MV_EntityType _ v) i = GM.basicUnsafeRead v i >>= return . toEnum
+    basicUnsafeWrite (MV_EntityType _ v) i e = GM.basicUnsafeWrite v i $ fromEnum e
+    basicInitialize (MV_EntityType _ v) = GM.basicInitialize v
+
+instance G.Vector V.Vector EntityType where
+    basicUnsafeFreeze (MV_EntityType n v) = liftM ( V_EntityType n) (G.basicUnsafeFreeze v)
+    basicUnsafeThaw   (V_EntityType n v) = liftM (MV_EntityType n) (G.basicUnsafeThaw   v)
+    basicLength       (V_EntityType n _) = n
+    basicUnsafeSlice m n (V_EntityType _ v) = V_EntityType n (G.basicUnsafeSlice m n v)
+    basicUnsafeIndexM (V_EntityType _ v) i = G.basicUnsafeIndexM v i >>= return . toEnum
+
+data instance V.MVector s Entity = MV_Entity !Int !(V.MVector s (Float, Float, Float, EntityType, Int))
+data instance V.Vector    Entity =  V_Entity !Int !(V.Vector    (Float, Float, Float, EntityType, Int))
+
+instance Unbox Entity
+
+instance GM.MVector V.MVector Entity where
+    basicLength (MV_Entity n _) = n
+    basicUnsafeSlice m n (MV_Entity _ v) = MV_Entity n (GM.basicUnsafeSlice m n v)
+    basicOverlaps (MV_Entity _ v) (MV_Entity _ u) = GM.basicOverlaps v u
+    basicUnsafeNew n = liftM (MV_Entity n) (GM.basicUnsafeNew n)
+    basicUnsafeRead (MV_Entity _ v) i = do
+        (x, y, z, typ, hp) <- GM.basicUnsafeRead v i
+        return $ Entity (Vector x y z) typ (entityName typ) hp (entitySpeed typ)
+    basicUnsafeWrite (MV_Entity _ v) i (Entity (Vector x y z) eType _ eHp _) = GM.basicUnsafeWrite v i (x, y, z, eType, eHp)
+    basicInitialize (MV_Entity _ v) = GM.basicInitialize v
+
+instance G.Vector V.Vector Entity where
+    basicUnsafeFreeze (MV_Entity n v) = liftM ( V_Entity n) (G.basicUnsafeFreeze v)
+    basicUnsafeThaw   (V_Entity n v) = liftM (MV_Entity n) (G.basicUnsafeThaw   v)
+    basicLength       (V_Entity n _) = n
+    basicUnsafeSlice m n (V_Entity _ v) = V_Entity n (G.basicUnsafeSlice m n v)
+    basicUnsafeIndexM (V_Entity _ v) i = do
+        (x, y, z, typ, hp) <- G.basicUnsafeIndexM v i
+        return $ Entity (Vector x y z) typ (entityName typ) hp (entitySpeed typ)
+
+entityName :: EntityType -> Text
+entityName = pack . show
 
 entitySpeed :: EntityType -> Vector
 entitySpeed e = case e of
@@ -123,7 +189,7 @@ entityMove e = e { eLocation = eLocation e `addV` change }
 mkEntity :: EntityType -> Vector -> Entity
 mkEntity typ loc = Entity { eLocation = loc
                           , eType = typ
-                          , eName = pack $ show typ
+                          , eName = entityName typ
                           , eHp = entityHp typ
                           , eSpeed = entitySpeed typ
                           }
@@ -138,27 +204,28 @@ chunkEntities = 1000
 
 data Chunk = Chunk { cLocation  :: !Vector
                    , cBlocks    :: !(V.Vector BlockId)
-                   , cEntities  :: !(VB.Vector Entity)
-                   } deriving (Generic)
+                   , cEntities  :: !(V.Vector Entity)
+                   } deriving (Eq, Show)
 
-instance NFData Chunk
+-- Don't need to force unboxed vecs:
+instance NFData Chunk where rnf Chunk{} = ()
 
 mkChunk :: Vector -> Chunk
 mkChunk v = Chunk { cLocation = v  -- x, y, z within the world
                   , cBlocks = V.generate chunkBlocks fromIntegral
-                  , cEntities = VB.generate chunkEntities genEntity
+                  , cEntities = V.generate chunkEntities genEntity
                   }
     where
         genEntity n =
             let i = fromIntegral n
-            in case n `mod` 3 of
+            in case n .&. 3 of
                 0 -> mkEntity Chicken   (Vector i i i)
                 1 -> mkEntity Zombie    (Vector i i i)
                 2 -> mkEntity Creeper   (Vector i i i)
                 _ -> mkEntity Enderman  (Vector i i i)
 
-processEntities :: Functor f => f Entity -> f Entity
-processEntities = fmap entityMove
+processEntities :: V.Vector Entity -> V.Vector Entity
+processEntities = V.map entityMove
 
 -- Game
 
@@ -169,9 +236,14 @@ data Game = Game { gChunks      :: !(VB.Vector Chunk)
                  , gChunkCount  :: !Int
                  , gBlocks      :: !(VB.Vector Block)
                  , gPlayerLoc   :: !Vector
-                 } deriving (Generic)
+                 } deriving (Eq, Show)
 
-instance NFData Game
+-- Don't need to force unboxed vecs:
+instance NFData Game where
+  rnf Game{..} =
+      rnf gBlocks `seq`
+      rnf gChunks `seq`
+      ()
 
 loadWorld :: Game
 loadWorld = Game { gChunks = fmap mkChunk vectorSeq
@@ -214,7 +286,7 @@ loop (Game chunks counter blocks playerLoc) = Game chunks' counter' blocks playe
 sleep16 :: NominalDiffTime -> IO ()
 sleep16 t = do
     let wait = floor $ (0.016 - t) * 1000000
-    threadDelay wait
+    if wait > 0 then threadDelay wait else return ()
 
 gameLoop :: Int -> Game -> IO ()
 gameLoop 0 _ = return ()
