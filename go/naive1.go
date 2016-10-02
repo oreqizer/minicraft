@@ -1,3 +1,7 @@
+/*
+Version 1
+*/
+
 package main
 
 import (
@@ -187,26 +191,25 @@ func (g *Game) LoadWorld() {
 	}
 }
 
+func (g *Game) removeChunk(id int) {
+	// see https://github.com/golang/go/wiki/SliceTricks
+	copy(g.chunks[:id], g.chunks[id+1:])
+	g.chunks[len(g.chunks)-1] = NewChunk(Vector{float64(g.chunkCount), 0, 0})
+	g.chunkCount++
+}
+
 func (g *Game) UpdateChunks() {
 	// remove chunks by index, duh
-	rmChunks := make([]int, 2)
 	for i, chunk := range g.chunks {
 		if g.playerLoc.Dist(chunk.loc) > GameChunks {
-			rmChunks = append(rmChunks, i)
+			g.removeChunk(i)
 		} else {
 			chunk.ProcessEntities()
 		}
 	}
-
-	for _, id := range rmChunks {
-		// see https://github.com/golang/go/wiki/SliceTricks
-		copy(g.chunks[:id], g.chunks[id+1:])
-		g.chunks[len(g.chunks)-1] = NewChunk(Vector{float64(g.chunkCount), 0, 0})
-		g.chunkCount++
-	}
 }
 
-func newGame() *Game {
+func NewGame() *Game {
 	return &Game{
 		chunkCount: 0,
 		playerLoc:  Vector{0, 0, 0},
@@ -217,7 +220,7 @@ func newGame() *Game {
 // ---
 
 func main() {
-	game := newGame()
+	game := NewGame()
 	fmt.Println("Loading World...")
 	start := time.Now()
 	game.LoadWorld()
@@ -226,7 +229,7 @@ func main() {
 	fmt.Printf("Load Time: %s\n", loadWorldTime)
 	// Game Loop, you can never leave
 	frames := 0
-	for {
+	for i := 0; i < 100; i++ {
 		// check for dead entities
 		start = time.Now()
 
